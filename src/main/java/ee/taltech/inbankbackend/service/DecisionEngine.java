@@ -55,23 +55,19 @@ public class DecisionEngine {
         }
 
         for (int period = loanPeriod; period <= DecisionEngineConstants.MAXIMUM_LOAN_PERIOD; period++) {
-            // Calculate the maximum approved loan for this period.
+
             long potentialLoan = (long) creditModifier * period;
 
-            // Cap the loan amount at the maximum allowed.
             if (potentialLoan > DecisionEngineConstants.MAXIMUM_LOAN_AMOUNT) {
                 potentialLoan = DecisionEngineConstants.MAXIMUM_LOAN_AMOUNT;
             }
 
-            // Skip if this potential loan is below the minimum allowed.
             if (potentialLoan < DecisionEngineConstants.MINIMUM_LOAN_AMOUNT) {
                 continue;
             }
 
-            // Calculate the credit score.
             double score = calculateCreditScore(creditModifier, potentialLoan, period);
             if (score >= 0.1) {
-                // As soon as a valid combination is found, return it.
                 return new Decision((int) potentialLoan, period, null);
             }
         }
