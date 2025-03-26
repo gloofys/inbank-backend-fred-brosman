@@ -1,36 +1,40 @@
 package ee.taltech.inbankbackend.service;
 
 import ee.taltech.inbankbackend.config.DecisionEngineConstants;
-import ee.taltech.inbankbackend.exceptions.InvalidLoanAmountException;
-import ee.taltech.inbankbackend.exceptions.InvalidLoanPeriodException;
-import ee.taltech.inbankbackend.exceptions.InvalidPersonalCodeException;
-import ee.taltech.inbankbackend.exceptions.NoValidLoanException;
+import ee.taltech.inbankbackend.exceptions.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+
 @ExtendWith(MockitoExtension.class)
 class DecisionEngineTest {
 
-    @InjectMocks
+
     private DecisionEngine decisionEngine;
+    private AgeValidator ageValidator;
 
     private String debtorPersonalCode;
     private String segment1PersonalCode;
     private String segment2PersonalCode;
     private String segment3PersonalCode;
+    private String underAgePersonalCode;
+    private String overAgePersonalCode;
 
     @BeforeEach
     void setUp() {
+        ageValidator = new AgeValidator();
+        decisionEngine = new DecisionEngine(ageValidator);
         debtorPersonalCode = "37605030299";
         segment1PersonalCode = "50307172740";
         segment2PersonalCode = "38411266610";
         segment3PersonalCode = "35006069515";
+        underAgePersonalCode = "32407261268";
+        overAgePersonalCode  = "34507260267";
     }
 
     @Test
@@ -105,8 +109,22 @@ class DecisionEngineTest {
     @Test
     void testNoValidLoanFound() {
         assertThrows(NoValidLoanException.class,
-                () -> decisionEngine.calculateApprovedLoan(debtorPersonalCode, 10000L, 60));
+                () -> decisionEngine.calculateApprovedLoan(debtorPersonalCode, 10000L, 48));
     }
+
+    @Test
+    void testTooYoungUser() throws InvalidLoanPeriodException, NoValidLoanException,
+            InvalidPersonalCodeException, InvalidLoanAmountException {
+        Decision decision = decisionEngine.calculateApprovedLoan(underAgePersonalCode, 10000L, 12);
+        assertEquals("Loan not allowed due to age restrictions.", decision.getErrorMessage());
+    }
+    @Test
+    void testTooOldUser() throws InvalidLoanPeriodException, NoValidLoanException,
+            InvalidPersonalCodeException, InvalidLoanAmountException {
+        Decision decision = decisionEngine.calculateApprovedLoan(overAgePersonalCode, 10000L, 12);
+        assertEquals("Loan not allowed due to age restrictions.", decision.getErrorMessage());
+    }
+
 
 }
 
